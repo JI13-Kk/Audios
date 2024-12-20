@@ -78,6 +78,10 @@
         .loading {
             color: blue;
         }
+
+        .success {
+            color: green;
+        }
     </style>
 </head>
 <body>
@@ -161,20 +165,28 @@
 <script>
     const baseURL = "https://premium.numberguru.com/premium";
 
-    // General fetch function
+    // General fetch function with enhanced error handling
     async function fetchData(url, responseDiv) {
         responseDiv.innerHTML = "<p class='loading'>Loading...</p>";
+
         try {
             const response = await fetch(url);
-            if (response.ok) {
-                const data = await response.json();
-                responseDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-            } else {
-                responseDiv.innerHTML = `<p class="error">Failed to fetch data. Try again later.</p>`;
+            
+            // Check if the response is ok (status 200-299)
+            if (!response.ok) {
+                throw new Error(`API Error: ${response.statusText} (Status ${response.status})`);
             }
+
+            const data = await response.json();
+            responseDiv.innerHTML = `<pre class="success">${JSON.stringify(data, null, 2)}</pre>`;
         } catch (error) {
-            responseDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            responseDiv.innerHTML = `<p class="error">Failed to fetch data: ${error.message}</p>`;
         }
+    }
+
+    // Network connectivity check
+    function checkNetworkConnection() {
+        return window.navigator.onLine;
     }
 
     // Fetch phone report data
@@ -182,6 +194,12 @@
         event.preventDefault();
         const phone = document.getElementById('phone').value;
         const phoneResponseDiv = document.getElementById('phoneResponse');
+
+        if (!checkNetworkConnection()) {
+            phoneResponseDiv.innerHTML = `<p class="error">No internet connection. Please check your network.</p>`;
+            return;
+        }
+
         const url = `${baseURL}/phone?number=${phone}`;
         fetchData(url, phoneResponseDiv);
     });
@@ -192,15 +210,18 @@
         const vin = document.getElementById('vin').value;
         const state = document.getElementById('state').value;
         const vehicleResponseDiv = document.getElementById('vehicleResponse');
-        
-        // Check if it's a VIN or License Plate Lookup
+
+        if (!checkNetworkConnection()) {
+            vehicleResponseDiv.innerHTML = `<p class="error">No internet connection. Please check your network.</p>`;
+            return;
+        }
+
         let url;
         if (vin.length === 17) {  // Assuming 17 characters is a VIN
             url = `${baseURL}/v2/vehicle/valuation?vin=${vin}`;
         } else if (vin.length > 0 && state) {
             url = `${baseURL}/v2/vehicle/lookup?plate=${vin}&state=${state}`;
-        } else {
-            vehicleResponseDiv.innerHTML = `<p class="error">Enter a valid VIN or License Plate with state.</p>`;
+        } else {vehicleResponseDiv.innerHTML = `<p class="error">Please enter a valid VIN or license plate with a state selected.</p>`;
             return;
         }
 
@@ -210,6 +231,12 @@
     // Fetch dark web data
     document.getElementById('darkWebButton').addEventListener('click', function () {
         const darkWebResponseDiv = document.getElementById('darkWebResponse');
+
+        if (!checkNetworkConnection()) {
+            darkWebResponseDiv.innerHTML = `<p class="error">No internet connection. Please check your network.</p>`;
+            return;
+        }
+
         const url = `${baseURL}/v2/darkweb/breaches/all`;
         fetchData(url, darkWebResponseDiv);
     });
@@ -219,7 +246,13 @@
         event.preventDefault();
         const dob1 = document.getElementById('dob1').value;
         const dob2 = document.getElementById('dob2').value;
-        const astrologyResponseDiv = document.getastrologyResponseDiv = document.getElementById('astrologyResponse');
+        const astrologyResponseDiv = document.getElementById('astrologyResponse');
+
+        if (!checkNetworkConnection()) {
+            astrologyResponseDiv.innerHTML = `<p class="error">No internet connection. Please check your network.</p>`;
+            return;
+        }
+
         const url = `${baseURL}/all/1/live/astrology_compatibility.json?dob1=${dob1}&dob2=${dob2}`;
         fetchData(url, astrologyResponseDiv);
     });
@@ -227,7 +260,13 @@
     // Fetch recent spam numbers
     document.getElementById('spamButton').addEventListener('click', function () {
         const spamResponseDiv = document.getElementById('spamResponse');
-        const url = `${baseURL}/v2/phone/recent_spam`;
+
+        if (!checkNetworkConnection()) {
+            spamResponseDiv.innerHTML = `<p class="error">No internet connection. Please check your network.</p>`;
+            return;
+        }
+
+        const url = `${baseURL}/json/last_24h_most_searched`;
         fetchData(url, spamResponseDiv);
     });
 
@@ -236,10 +275,16 @@
         event.preventDefault();
         const comment = document.getElementById('comment').value;
         const commentResponseDiv = document.getElementById('commentResponse');
+
+        if (!checkNetworkConnection()) {
+            commentResponseDiv.innerHTML = `<p class="error">No internet connection. Please check your network.</p>`;
+            return;
+        }
+
         commentResponseDiv.innerHTML = "<p class='loading'>Posting comment...</p>";
-        
+
         try {
-            const response = await fetch(`${baseURL}/comments`, {
+            const response = await fetch(`${baseURL}/json/comment`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -249,14 +294,15 @@
 
             if (response.ok) {
                 const data = await response.json();
-                commentResponseDiv.innerHTML = `<p>Comment posted successfully!</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                commentResponseDiv.innerHTML = `<p class="success">Comment posted successfully!</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
             } else {
-                commentResponseDiv.innerHTML = `<p class="error">Failed to post comment. Try again later.</p>`;
+                commentResponseDiv.innerHTML = `<p class="error">Failed to post comment. Server responded with: ${response.statusText} (Status ${response.status})</p>`;
             }
         } catch (error) {
             commentResponseDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
         }
     });
 </script>
+
 </body>
-</html
+</html>

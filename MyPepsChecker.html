@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Premium API Services Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+
+        main {
+            padding: 20px;
+            max-width: 900px;
+            margin: 20px auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #4CAF50;
+        }
+
+        .api-form {
+            margin-bottom: 20px;
+        }
+
+        .api-form label {
+            font-weight: bold;
+        }
+
+        .api-form input[type="text"], .api-form select {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .api-form button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .api-form button:hover {
+            background-color: #45a049;
+        }
+
+        .response-container {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9e9e9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .loading {
+            color: blue;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Premium API Services Dashboard</h1>
+</header>
+
+<main>
+    <!-- Phone Report Section -->
+    <section>
+        <h2>Phone Report Search</h2>
+        <form class="api-form" id="phoneForm">
+            <label for="phone">Enter Phone Number:</label>
+            <input type="text" id="phone" name="phone" placeholder="e.g. 5551234567" required>
+            <button type="submit">Search</button>
+        </form>
+        <div class="response-container" id="phoneResponse"></div>
+    </section>
+
+    <!-- Vehicle Report Section (VIN or License Plate) -->
+    <section>
+        <h2>Vehicle Report (VIN or License Plate)</h2>
+        <form class="api-form" id="vehicleForm">
+            <label for="vin">Enter Vehicle VIN or License Plate:</label>
+            <input type="text" id="vin" name="vin" placeholder="Enter VIN or License Plate" required>
+
+            <label for="state">Select State for License Plate Lookup:</label>
+            <select id="state" name="state">
+                <option value="">--Select State--</option>
+                <option value="NY">New York</option>
+                <option value="CA">California</option>
+                <option value="TX">Texas</option>
+                <!-- Add all US states here -->
+            </select>
+
+            <button type="submit">Fetch Vehicle Report</button>
+        </form>
+        <div class="response-container" id="vehicleResponse"></div>
+    </section>
+
+    <!-- Dark Web Data Section -->
+    <section>
+        <h2>Dark Web Data</h2>
+        <button id="darkWebButton">Fetch Dark Web Data</button>
+        <div class="response-container" id="darkWebResponse"></div>
+    </section>
+
+    <!-- Astrology Report Section -->
+    <section>
+        <h2>Astrology Compatibility</h2>
+        <form class="api-form" id="astrologyForm">
+            <label for="dob1">Your Birthdate:</label>
+            <input type="date" id="dob1" name="dob1" required>
+            <label for="dob2">Partner's Birthdate:</label>
+            <input type="date" id="dob2" name="dob2" required>
+            <button type="submit">Check Compatibility</button>
+        </form>
+        <div class="response-container" id="astrologyResponse"></div>
+    </section>
+
+    <!-- Recent Spam Numbers Section -->
+    <section>
+        <h2>Recent Spam Numbers</h2>
+        <button id="spamButton">Load Spam Numbers</button>
+        <div class="response-container" id="spamResponse"></div>
+    </section>
+
+    <!-- Post a Comment Section -->
+    <section>
+        <h2>Post a Comment</h2>
+        <form class="api-form" id="commentForm">
+            <label for="comment">Your Comment:</label>
+            <input type="text" id="comment" name="comment" placeholder="Enter your comment here" required>
+            <button type="submit">Post Comment</button>
+        </form>
+        <div class="response-container" id="commentResponse"></div>
+    </section>
+</main>
+
+<script>
+    const baseURL = "https://premium.numberguru.com/premium";
+
+    // General fetch function
+    async function fetchData(url, responseDiv) {
+        responseDiv.innerHTML = "<p class='loading'>Loading...</p>";
+        try {
+            const response = await fetch(url);
+            if (response.ok) {
+                const data = await response.json();
+                responseDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } else {
+                responseDiv.innerHTML = `<p class="error">Failed to fetch data. Try again later.</p>`;
+            }
+        } catch (error) {
+            responseDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+        }
+    }
+
+    // Fetch phone report data
+    document.getElementById('phoneForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+        const phone = document.getElementById('phone').value;
+        const phoneResponseDiv = document.getElementById('phoneResponse');
+        const url = `${baseURL}/phone?number=${phone}`;
+        fetchData(url, phoneResponseDiv);
+    });
+
+    // Fetch vehicle report data (VIN or License Plate with State Lookup)
+    document.getElementById('vehicleForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+        const vin = document.getElementById('vin').value;
+        const state = document.getElementById('state').value;
+        const vehicleResponseDiv = document.getElementById('vehicleResponse');
+        
+        // Check if it's a VIN or License Plate Lookup
+        let url;
+        if (vin.length === 17) {  // Assuming 17 characters is a VIN
+            url = `${baseURL}/v2/vehicle/valuation?vin=${vin}`;
+        } else if (vin.length > 0 && state) {
+            url = `${baseURL}/v2/vehicle/lookup?plate=${vin}&state=${state}`;
+        } else {
+            vehicleResponseDiv.innerHTML = `<p class="error">Enter a valid VIN or License Plate with state.</p>`;
+            return;
+        }
+
+        fetchData(url, vehicleResponseDiv);
+    });
+
+    // Fetch dark web data
+    document.getElementById('darkWebButton').addEventListener('click', function () {
+        const darkWebResponseDiv = document.getElementById('darkWebResponse');
+        const url = `${baseURL}/v2/darkweb/breaches/all`;
+        fetchData(url, darkWebResponseDiv);
+    });
+
+    // Fetch astrology compatibility data
+    document.getElementById('astrologyForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+        const dob1 = document.getElementById('dob1').value;
+        const dob2 = document.getElementById('dob2').value;
+        const astrologyResponseDiv = document.getastrologyResponseDiv = document.getElementById('astrologyResponse');
+        const url = `${baseURL}/all/1/live/astrology_compatibility.json?dob1=${dob1}&dob2=${dob2}`;
+        fetchData(url, astrologyResponseDiv);
+    });
+
+    // Fetch recent spam numbers
+    document.getElementById('spamButton').addEventListener('click', function () {
+        const spamResponseDiv = document.getElementById('spamResponse');
+        const url = `${baseURL}/v2/phone/recent_spam`;
+        fetchData(url, spamResponseDiv);
+    });
+
+    // Post a comment
+    document.getElementById('commentForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const comment = document.getElementById('comment').value;
+        const commentResponseDiv = document.getElementById('commentResponse');
+        commentResponseDiv.innerHTML = "<p class='loading'>Posting comment...</p>";
+        
+        try {
+            const response = await fetch(`${baseURL}/comments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ comment }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                commentResponseDiv.innerHTML = `<p>Comment posted successfully!</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } else {
+                commentResponseDiv.innerHTML = `<p class="error">Failed to post comment. Try again later.</p>`;
+            }
+        } catch (error) {
+            commentResponseDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+        }
+    });
+</script>
+</body>
+</html
